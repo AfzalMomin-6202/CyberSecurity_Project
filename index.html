@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visitor Identification System using AI</title>
+
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(to right, #1e3c72, #2a5298);
+        color: #fff;
+        text-align: center;
+      }
+
+      header {
+        padding: 40px 20px 20px;
+      }
+      header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        letter-spacing: 2px;
+      }
+      header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+      }
+
+      video {
+        border: 5px solid #fff;
+        border-radius: 12px;
+        margin-top: 20px;
+        width: 60%;
+        max-width: 600px;
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      #nameInput {
+        margin-top: 20px;
+        padding: 10px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: none;
+        outline: none;
+        width: 250px;
+        text-align: center;
+      }
+
+      .btn {
+        margin: 15px 10px;
+        padding: 12px 24px;
+        font-size: 1rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease-in-out;
+      }
+
+      .btn-register {
+        background-color: #28a745;
+        color: #fff;
+      }
+      .btn-register:hover {
+        background-color: #218838;
+        transform: scale(1.05);
+      }
+
+      .btn-recognize {
+        background-color: #007bff;
+        color: #fff;
+      }
+      .btn-recognize:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+      }
+
+      footer {
+        margin-top: 40px;
+        padding: 20px;
+        font-size: 0.9rem;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Visitor Identification System using AI</h1>
+      <p>Seamless face recognition for smarter visitor management</p>
+    </header>
+
+    <video id="video" autoplay></video><br />
+
+    <input type="text" id="nameInput" placeholder="Enter your name" /><br />
+
+    <button class="btn btn-register" onclick="captureFace()">Capture & Register</button>
+    <button class="btn btn-recognize" onclick="recognizeFace()">Recognize</button>
+
+    <canvas id="canvas" style="display: none"></canvas>
+
+    <script>
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          document.getElementById("video").srcObject = stream;
+        });
+
+      function captureFace() {
+        const name = document.getElementById("nameInput").value.trim();
+        if (!name) {
+          alert("⚠️ Please enter a name before registering.");
+          return;
+        }
+
+        const canvas = document.getElementById("canvas");
+        const video = document.getElementById("video");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+
+        canvas.toBlob(blob => {
+          const formData = new FormData();
+          formData.append("image", blob);
+          formData.append("name", name);
+          fetch("/register", { method: "POST", body: formData })
+            .then(r => r.json())
+            .then(data => {
+              alert("✅ Registered: " + data.name);
+            });
+        }, "image/jpeg");
+      }
+
+      function recognizeFace() {
+        const canvas = document.getElementById("canvas");
+        const video = document.getElementById("video");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+
+        canvas.toBlob(blob => {
+          const formData = new FormData();
+          formData.append("image", blob);
+          fetch("/recognize", { method: "POST", body: formData })
+            .then(response => response.json())
+            .then(data => {
+              if (data.names.length > 0) {
+                alert("👤 Detected: " + data.names.join(", "));
+              } else {
+                alert("⚠️ No faces detected.");
+              }
+            });
+        }, "image/jpeg");
+      }
+    </script>
+
+    <footer>
+      &copy; 2025 Visitor Identification System | Powered by AI
+    </footer>
+  </body>
+</html>
